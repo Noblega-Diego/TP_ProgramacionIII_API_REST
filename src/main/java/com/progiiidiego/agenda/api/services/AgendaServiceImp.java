@@ -59,7 +59,7 @@ public class AgendaServiceImp implements AgendaService{
         if(datos.getEmail()!= null)
             c.setEmail(datos.getEmail());
         if(datos.getDomicilio()!= null)
-            c.setEmail(datos.getDomicilio());
+            c.setDomicilio(datos.getDomicilio());
         if(datos.getTelefono() != 0)
             c.setTelefono(datos.getTelefono());
         agendaRepository.save(c);

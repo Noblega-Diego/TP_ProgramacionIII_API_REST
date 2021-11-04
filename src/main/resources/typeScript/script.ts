@@ -1,87 +1,86 @@
-
-interface Contacto{
-    id:number,
-    nombre:string,
-    apellido:string,
-    domicilio:string,
-    email:string,
-    telefono:number
+const table = new Table(document.getElementById("contentTable"));
+const form = <HTMLFormElement> document.getElementById("form");
+let update = false;
+const inputsForm ={   
+    id : form?.querySelector<HTMLInputElement>(`#in_id`),
+    nombre : form?.querySelector<HTMLInputElement>(`#in_name`),
+    apellido : form?.querySelector<HTMLInputElement>(`#in_lastname`),
+    domicilio : form?.querySelector<HTMLInputElement>(`#in_direccion`),
+    email : form?.querySelector<HTMLInputElement>(`#in_email`),
+    telefono : form?.querySelector<HTMLInputElement>(`#in_phone`)
 }
 
-class Table {
-    private form:HTMLElement = document.createElement("tbody");
-    private DELETE = "delete";
-    private EDIT = "edit";
-    private eventDelete: ((id:number)=>void)[] = [];
-    private eventEdit: ((id:number)=>void)[] = [];
-    constructor(tbody:HTMLElement|null) {
-        if(tbody != null)
-            this.form = tbody;
-        this.initialize();
-    }
-    
-    private initialize() {
-        this.form.addEventListener("click", (e)=>{
-            let element:any = e.target;
-            if(element.nodeName === "BUTTON")
-                if(element.dataset.type === this.DELETE)
-                    this.eventDelete.forEach(event => event(Number(element.dataset.id)))
-                else if(element.dataset.type === this.EDIT){
-                    this.eventEdit.forEach(event => event(Number(element.dataset.id)))
-                }
-            e.preventDefault();
-        })
-    }
-
-    public addRow = (contacto:Contacto)=>{
-        const row = document.createElement("tr");
-        row.dataset.id = contacto.id.toString();
-        row.appendChild(this.createColumn(contacto.id.toString()));
-        row.appendChild(this.createColumn(contacto.nombre)); 
-        row.appendChild(this.createColumn(contacto.apellido)); 
-        row.appendChild(this.createColumn(contacto.domicilio)); 
-        row.appendChild(this.createColumn(contacto.email)); 
-        row.appendChild(this.createColumn(contacto.telefono.toString())); 
-        const btDelete = document.createElement("button");
-        btDelete.classList.add("btn","btn-danger");
-        btDelete.innerText = "eliminar";
-        btDelete.dataset.type = this.DELETE;
-        btDelete.dataset.id = contacto.id.toString();
-        const btEdit = document.createElement("button");
-        btEdit.classList.add("btn","btn-info");
-        btEdit.innerText = "modificar";
-        btEdit.dataset.type = this.EDIT;
-        btEdit.dataset.id = contacto.id.toString();
-        row.appendChild(this.createColumn(btDelete,btEdit))
-        this.form.appendChild(row);
-    }
-
-    public addRows(contactos:Contacto[]){
-        contactos.forEach(c=>this.addRow(c));
-    }
-
-    public removeRow(id:number){
-        this.form.querySelector(`tr[data-id='${id}']`)?.remove()
-    }
-
-    public clear(){
-        this.form.childNodes.forEach(element=>element.remove())
-    }
-
-    public addEventButtonDelete(target:(id:number)=>void){this.eventDelete.push(target)};
-    
-    public addEventButtonEdit(target:(id:number)=>void){this.eventDelete.push(target)};
-
-    private createColumn(...content:(HTMLElement|string)[]):HTMLTableCellElement{
-        const column:HTMLTableCellElement = document.createElement("td");
-        content.forEach(e =>{ 
-            if(e != null)
-                column.appendChild((typeof e === "string")? document.createTextNode(e):e)})
-        return column;
-    }
+const limpiarForm = ()=>{
+    form?.reset();
+    update = false;
+}
+const validar = (str:any)=>{
+    return !(str == undefined || str == "")
 }
 
-let table = new Table(document.getElementById("contentTable"));
+const guardarContacto = (contacto:Contacto)=>{
+    limpiarForm();
+    fetch("api/contactos",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify(contacto)
+    })
+    .then(data=>data.json())
+    .then((json:Contacto)=>{
+        table.addRow(json);
+    })
+}
+
+const actualizarContacto=(contacto:Contacto)=>{
+    limpiarForm();
+    fetch(`api/contactos/${contacto.id}`,{
+        method:"PUT",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify(contacto)
+    })
+    .then(data=>data.json())
+    .then((json:Contacto)=>{
+        table.updateRow(json);
+    })
+}
+
+
+
+
+document.getElementById("form")?.addEventListener("submit",e=>{
+    e.preventDefault();
+    console.log(e.target);
+    let id = inputsForm.id?.value;
+    let nombre = inputsForm.nombre?.value;
+    let apellido = inputsForm.apellido?.value;
+    let domicilio = inputsForm.domicilio?.value;
+    let email = inputsForm.email?.value;
+    let telefono = inputsForm.telefono?.value;
+    if(!validar(nombre) || 
+        !validar(apellido) || 
+        !validar(domicilio) || 
+        !validar(email) || 
+        !validar(telefono))
+        return;
+    let contacto:Contacto = {
+        id: Number(id),
+        nombre: (nombre)? nombre:null,
+        apellido: (apellido)? apellido:null,
+        domicilio: (domicilio)? domicilio:null,
+        email: (email)? email:null,
+        telefono: (telefono)?  Number(telefono):null
+    }
+    console.log(contacto);
+    if(update)
+        actualizarContacto(contacto);
+    else
+        guardarContacto(contacto);
+});
+
 
 
 table.addEventButtonDelete((id)=>{
@@ -93,8 +92,18 @@ table.addEventButtonDelete((id)=>{
         .then(data => table.removeRow(id))    
 })
 table.addEventButtonEdit((id)=>{
-    
+    let contacto = table.getContent(id);
+    console.log("edit");
+    console.log(contacto);
+    if(inputsForm.id && contacto.id) inputsForm.id.value = contacto.id.toString();
+    if(inputsForm.nombre && contacto.nombre) inputsForm.nombre.value = contacto.nombre.toString();
+    if(inputsForm.apellido && contacto.apellido) inputsForm.apellido.value = contacto.apellido.toString();
+    if(inputsForm.domicilio && contacto.domicilio) inputsForm.domicilio.value = contacto.domicilio.toString();
+    if(inputsForm.telefono && contacto.telefono) inputsForm.telefono.value = contacto.telefono.toString();
+    if(inputsForm.email && contacto.email) inputsForm.email.value = contacto.email.toString();
+    update = true;
 })
+
 fetch("api/contactos")
     .then(data => data.json())
     .then((json:Contacto[]) => {

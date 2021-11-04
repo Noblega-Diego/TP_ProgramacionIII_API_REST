@@ -1,77 +1,81 @@
 "use strict";
-var Table = /** @class */ (function () {
-    function Table(tbody) {
-        var _this = this;
-        this.form = document.createElement("tbody");
-        this.DELETE = "delete";
-        this.EDIT = "edit";
-        this.eventDelete = [];
-        this.eventEdit = [];
-        this.addRow = function (contacto) {
-            var row = document.createElement("tr");
-            row.dataset.id = contacto.id.toString();
-            row.appendChild(_this.createColumn(contacto.id.toString()));
-            row.appendChild(_this.createColumn(contacto.nombre));
-            row.appendChild(_this.createColumn(contacto.apellido));
-            row.appendChild(_this.createColumn(contacto.domicilio));
-            row.appendChild(_this.createColumn(contacto.email));
-            row.appendChild(_this.createColumn(contacto.telefono.toString()));
-            var btDelete = document.createElement("button");
-            btDelete.classList.add("btn", "btn-danger");
-            btDelete.innerText = "eliminar";
-            btDelete.dataset.type = _this.DELETE;
-            btDelete.dataset.id = contacto.id.toString();
-            var btEdit = document.createElement("button");
-            btEdit.classList.add("btn", "btn-info");
-            btEdit.innerText = "modificar";
-            btEdit.dataset.type = _this.EDIT;
-            btEdit.dataset.id = contacto.id.toString();
-            row.appendChild(_this.createColumn(btDelete, btEdit));
-            _this.form.appendChild(row);
-        };
-        if (tbody != null)
-            this.form = tbody;
-        this.initialize();
-    }
-    Table.prototype.initialize = function () {
-        var _this = this;
-        this.form.addEventListener("click", function (e) {
-            var element = e.target;
-            if (element.nodeName === "BUTTON")
-                if (element.dataset.type === _this.DELETE)
-                    _this.eventDelete.forEach(function (event) { return event(Number(element.dataset.id)); });
-                else if (element.dataset.type === _this.EDIT) {
-                    _this.eventEdit.forEach(function (event) { return event(Number(element.dataset.id)); });
-                }
-            e.preventDefault();
-        });
-    };
-    Table.prototype.removeRow = function (id) {
-        var _a;
-        (_a = this.form.querySelector("tr[data-id='" + id + "']")) === null || _a === void 0 ? void 0 : _a.remove();
-    };
-    Table.prototype.clear = function () {
-        this.form.childNodes.forEach(function (element) { return element.remove(); });
-    };
-    Table.prototype.addEventButtonDelete = function (target) { this.eventDelete.push(target); };
-    ;
-    Table.prototype.addEventButtonEdit = function (target) { this.eventDelete.push(target); };
-    ;
-    Table.prototype.createColumn = function () {
-        var content = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            content[_i] = arguments[_i];
-        }
-        var column = document.createElement("td");
-        content.forEach(function (e) {
-            if (e != null)
-                column.appendChild((typeof e === "string") ? document.createTextNode(e) : e);
-        });
-        return column;
-    };
-    return Table;
-}());
+var _a;
 var table = new Table(document.getElementById("contentTable"));
+var form = document.getElementById("form");
+var update = false;
+var inputsForm = {
+    id: form === null || form === void 0 ? void 0 : form.querySelector("#in_id"),
+    nombre: form === null || form === void 0 ? void 0 : form.querySelector("#in_name"),
+    apellido: form === null || form === void 0 ? void 0 : form.querySelector("#in_lastname"),
+    domicilio: form === null || form === void 0 ? void 0 : form.querySelector("#in_direccion"),
+    email: form === null || form === void 0 ? void 0 : form.querySelector("#in_email"),
+    telefono: form === null || form === void 0 ? void 0 : form.querySelector("#in_phone")
+};
+var limpiarForm = function () {
+    form === null || form === void 0 ? void 0 : form.reset();
+    update = false;
+};
+var validar = function (str) {
+    return !(str == undefined || str == "");
+};
+var guardarContacto = function (contacto) {
+    limpiarForm();
+    fetch("api/contactos", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(contacto)
+    })
+        .then(function (data) { return data.json(); })
+        .then(function (json) {
+        table.addRow(json);
+    });
+};
+var actualizarContacto = function (contacto) {
+    limpiarForm();
+    fetch("api/contactos/" + contacto.id, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(contacto)
+    })
+        .then(function (data) { return data.json(); })
+        .then(function (json) {
+        table.updateRow(json);
+    });
+};
+(_a = document.getElementById("form")) === null || _a === void 0 ? void 0 : _a.addEventListener("submit", function (e) {
+    var _a, _b, _c, _d, _e, _f;
+    e.preventDefault();
+    console.log(e.target);
+    var id = (_a = inputsForm.id) === null || _a === void 0 ? void 0 : _a.value;
+    var nombre = (_b = inputsForm.nombre) === null || _b === void 0 ? void 0 : _b.value;
+    var apellido = (_c = inputsForm.apellido) === null || _c === void 0 ? void 0 : _c.value;
+    var domicilio = (_d = inputsForm.domicilio) === null || _d === void 0 ? void 0 : _d.value;
+    var email = (_e = inputsForm.email) === null || _e === void 0 ? void 0 : _e.value;
+    var telefono = (_f = inputsForm.telefono) === null || _f === void 0 ? void 0 : _f.value;
+    if (!validar(nombre) ||
+        !validar(apellido) ||
+        !validar(domicilio) ||
+        !validar(email) ||
+        !validar(telefono))
+        return;
+    var contacto = {
+        id: Number(id),
+        nombre: (nombre) ? nombre : null,
+        apellido: (apellido) ? apellido : null,
+        domicilio: (domicilio) ? domicilio : null,
+        email: (email) ? email : null,
+        telefono: (telefono) ? Number(telefono) : null
+    };
+    console.log(contacto);
+    if (update)
+        actualizarContacto(contacto);
+    else
+        guardarContacto(contacto);
+});
 table.addEventButtonDelete(function (id) {
     var flagConfirm = confirm("esta seguro de eliminar el contacto");
     if (flagConfirm)
@@ -81,6 +85,22 @@ table.addEventButtonDelete(function (id) {
             .then(function (data) { return table.removeRow(id); });
 });
 table.addEventButtonEdit(function (id) {
+    var contacto = table.getContent(id);
+    console.log("edit");
+    console.log(contacto);
+    if (inputsForm.id && contacto.id)
+        inputsForm.id.value = contacto.id.toString();
+    if (inputsForm.nombre && contacto.nombre)
+        inputsForm.nombre.value = contacto.nombre.toString();
+    if (inputsForm.apellido && contacto.apellido)
+        inputsForm.apellido.value = contacto.apellido.toString();
+    if (inputsForm.domicilio && contacto.domicilio)
+        inputsForm.domicilio.value = contacto.domicilio.toString();
+    if (inputsForm.telefono && contacto.telefono)
+        inputsForm.telefono.value = contacto.telefono.toString();
+    if (inputsForm.email && contacto.email)
+        inputsForm.email.value = contacto.email.toString();
+    update = true;
 });
 fetch("api/contactos")
     .then(function (data) { return data.json(); })

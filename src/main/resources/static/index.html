@@ -15,8 +15,8 @@ and open the template in the editor.
 
     <body>
         <main class="container-md">
-            <form action="" method="post" id="form">
-                <h2>Modificar Contacto</h2>
+            <form action="" id="form">
+                <h2>Contacto</h2>
                 <div>
                     <label for="in_name">nombre</label>
                     <input type="text" name="nombre" id="in_name">
@@ -37,7 +37,9 @@ and open the template in the editor.
                     <label for="in_phone">telefono</label>
                     <input type="text" name="telefono" id="in_phone">
                 </div>
+                <input type="hidden" name="id" id="in_id">
                 <button type="submit" class="btn btn-primary">confirmar</button>
+                <button type="click" class="btn btn-primary">confirmar</button>
             </form>        
             <table class="table table-hover">
                 <thead>
@@ -57,6 +59,8 @@ and open the template in the editor.
             </table>
 
         </main>
+
+        <script src="Table.1.js"></script>
         <script src="script.js"></script>
     </body>
 </html>
